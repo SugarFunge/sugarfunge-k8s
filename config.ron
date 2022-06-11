@@ -1,0 +1,54 @@
+Config (
+    api: Some(
+        ApiConfig (
+            image: "sugarfunge.azurecr.io/api:latest",
+            port: 4000,
+            listen_url: "http://0.0.0.0:4000",
+            node_url: "ws://sf-node:9944",
+        )
+    ),
+    explorer: Some(
+        ExplorerConfig (
+            image: "sugarfunge.azurecr.io/explorer:latest",
+            port: 80,
+            ws_url: "wss://node.sugarfunge.dev",
+        )
+    ),
+    keycloak: Some(
+        KeycloakConfig (
+            image: "quay.io/keycloak/keycloak:15.0.2",
+            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602",
+            port: 8080,
+            db_config: KeycloakDatabaseConfig (
+                db_database: "keycloak",
+                db_user: "keycloak",
+                db_password: "keycloak",
+                db_address: "sf-db-postgresql",
+                db_port: 5432,
+                db_schema: "public",
+            ),
+        )
+    ),
+    node: Some(
+        NodeConfig (
+            image: "sugarfunge.azurecr.io/node:latest",
+            ws_port: 9945,
+            p2p_port: 30335,
+            node_name: "bob",
+            bootnode: Some(
+                BootNode(
+                    dns_url: "sf-node-0.sf-node.default.svc.cluster.local",
+                    p2p_port: 30334,
+                    private_key: "12D3KooWGzN9EZLNkxEVeApishpq8d3pzChPmw9jQ9kra3csTAhk",
+                )
+            ),
+        )
+    ),
+    status: Some(
+        StatusConfig (
+            image: "sugarfunge.azurecr.io/status:latest",
+            port: 8000,
+            node_url: "wss://node.sugarfunge.dev",
+        )
+    ),
+)
