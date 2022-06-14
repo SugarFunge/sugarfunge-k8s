@@ -37,7 +37,7 @@ Config (
             node_name: "bob",
             bootnode: Some(
                 BootNode(
-                    dns_url: "sf-node-0.sf-node.default.svc.cluster.local",
+                    dns_url: "sf-node.default.svc.cluster.local",
                     p2p_port: 30334,
                     private_key: "12D3KooWGzN9EZLNkxEVeApishpq8d3pzChPmw9jQ9kra3csTAhk",
                 )
@@ -49,6 +49,13 @@ Config (
             image: "sugarfunge.azurecr.io/status:latest",
             port: 8000,
             node_url: "wss://node.sugarfunge.dev",
+        )
+    ),
+    ingress: Some(
+        IngressConfig (
+            host: "demo.sugarfunge.dev",
+            tls_secret: "sf-ingress-tls",
+            tls_issuer: "letsencrypt-staging",
         )
     ),
 )

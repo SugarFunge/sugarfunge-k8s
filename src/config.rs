@@ -89,7 +89,7 @@ pub struct BootNode {
 impl Default for BootNode {
     fn default() -> Self {
         Self {
-            dns_url: "sf-node-0.sf-node.default.svc.cluster.local".to_string(),
+            dns_url: "sf-node.default.svc.cluster.local".to_string(),
             p2p_port: 30334,
             private_key: "12D3KooWGzN9EZLNkxEVeApishpq8d3pzChPmw9jQ9kra3csTAhk".to_string(),
         }
@@ -135,12 +135,30 @@ impl Default for StatusConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct IngressConfig {
+    pub host: String,
+    pub tls_secret: String,
+    pub tls_issuer: String,
+}
+
+impl Default for IngressConfig {
+    fn default() -> Self {
+        Self {
+            host: "demo.sugarfunge.dev".to_string(),
+            tls_secret: "sf-ingress-tls".to_string(),
+            tls_issuer: "letsencrypt-staging".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub api: Option<ApiConfig>,
     pub explorer: Option<ExplorerConfig>,
     pub keycloak: Option<KeycloakConfig>,
     pub node: Option<NodeConfig>,
     pub status: Option<StatusConfig>,
+    pub ingress: Option<IngressConfig>,
 }
 
 impl Default for Config {
@@ -151,6 +169,7 @@ impl Default for Config {
             keycloak: Some(Default::default()),
             node: Some(Default::default()),
             status: Some(Default::default()),
+            ingress: Some(Default::default()),
         }
     }
 }

@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use k8s_openapi::api::{
     apps::v1::{Deployment, StatefulSet},
-    core::v1::{ConfigMap, Secret, Service, ServicePort, ServiceSpec},
+    core::v1::{ConfigMap, Secret, Service, ServicePort, ServiceSpec}, networking::v1::Ingress,
 };
 use kube::{
     api::{DeleteParams, PostParams},
@@ -19,12 +19,13 @@ pub struct ServiceData {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ResourceType {
+pub enum K8sResource {
     Service,
     ConfigMap,
     Secret,
     Deployment,
     StatefulSet,
+    Ingress,
 }
 
 pub async fn create_service(
@@ -43,7 +44,8 @@ pub async fn create_service(
                 "app.kubernetes.io/name".to_string(),
                 service_data.name,
             )])),
-            type_: Some("NodePort".to_string()),
+            type_: service_data.service_type,
+            cluster_ip: service_data.cluster_ip,
             ..Default::default()
         }),
         ..Default::default()
@@ -95,41 +97,47 @@ pub async fn create_configmap(
 pub async fn delete_resources(
     namespace: &str,
     name: &str,
-    resources: Vec<ResourceType>,
+    resources: Vec<K8sResource>,
 ) -> anyhow::Result<()> {
     let client = Client::try_default().await?;
     let dp = DeleteParams::default();
 
     for resource_type in resources {
         match resource_type {
-            ResourceType::Service => {
+            K8sResource::Service => {
                 let services: Api<Service> = Api::namespaced(client.clone(), namespace);
                 if services.get_opt(name).await.is_ok() {
                     services.delete(name, &dp).await?;
                 }
             }
-            ResourceType::ConfigMap => {
+            K8sResource::ConfigMap => {
                 let configmaps: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
                 if configmaps.get_opt(name).await.is_ok() {
                     configmaps.delete(name, &dp).await?;
                 }
             }
-            ResourceType::Secret => {
+            K8sResource::Secret => {
                 let secrets: Api<Secret> = Api::namespaced(client.clone(), namespace);
                 if secrets.get_opt(name).await.is_ok() {
                     secrets.delete(name, &dp).await?;
                 }
             }
-            ResourceType::Deployment => {
+            K8sResource::Deployment => {
                 let deployments: Api<Deployment> = Api::namespaced(client.clone(), namespace);
                 if deployments.get_opt(name).await.is_ok() {
                     deployments.delete(name, &dp).await?;
                 }
             }
-            ResourceType::StatefulSet => {
+            K8sResource::StatefulSet => {
                 let statefulsets: Api<StatefulSet> = Api::namespaced(client.clone(), namespace);
                 if statefulsets.get_opt(name).await.is_ok() {
                     statefulsets.delete(name, &dp).await?;
+                }
+            },
+            K8sResource::Ingress => {
+                let ingress_res: Api<Ingress> = Api::namespaced(client.clone(), namespace);
+                if ingress_res.get_opt(name).await.is_ok() {
+                    ingress_res.delete(name, &dp).await?;
                 }
             }
         }
