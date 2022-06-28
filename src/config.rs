@@ -101,7 +101,10 @@ pub struct NodeConfig {
     pub image: String,
     pub ws_port: i32,
     pub p2p_port: i32,
+    pub prometheus_port: i32,
     pub node_name: String,
+    pub wget_image: String,
+    pub chainspec_url: String,
     pub bootnode: Option<BootNode>,
 }
 
@@ -111,7 +114,11 @@ impl Default for NodeConfig {
             image: "sugarfunge.azurecr.io/node:latest".to_string(),
             ws_port: 9944,
             p2p_port: 30334,
+            prometheus_port: 9090,
             node_name: "alice".to_string(),
+            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602"
+                .to_string(),
+            chainspec_url: "".to_string(),
             bootnode: None,
         }
     }

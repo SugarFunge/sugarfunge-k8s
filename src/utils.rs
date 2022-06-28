@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use k8s_openapi::api::{
     apps::v1::{Deployment, StatefulSet},
-    core::v1::{ConfigMap, Secret, Service, ServicePort, ServiceSpec}, networking::v1::Ingress,
+    core::v1::{ConfigMap, Secret, Service, ServicePort, ServiceSpec},
+    networking::v1::Ingress,
 };
 use kube::{
     api::{DeleteParams, PostParams},
@@ -133,7 +134,7 @@ pub async fn delete_resources(
                 if statefulsets.get_opt(name).await.is_ok() {
                     statefulsets.delete(name, &dp).await?;
                 }
-            },
+            }
             K8sResource::Ingress => {
                 let ingress_res: Api<Ingress> = Api::namespaced(client.clone(), namespace);
                 if ingress_res.get_opt(name).await.is_ok() {

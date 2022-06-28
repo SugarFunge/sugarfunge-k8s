@@ -9,10 +9,12 @@ USAGE:
 
 ARGS:
     <ACTION>     [possible values: create, delete]
-    <SERVICE>    Name of the service [possible values: api, explorer, keycloak, node, status]
+    <SERVICE>    Name of the service [possible values: api, explorer, keycloak, node, status,
+                 ingress]
 
 OPTIONS:
-    -c <CONFIG>                    
+        --chain <CHAIN>            [possible values: local, testnet]
+        --config <CONFIG>          
     -h, --help                     Print help information
     -n, --namespace <NAMESPACE>    [default: default]
     -V, --version                  Print version information

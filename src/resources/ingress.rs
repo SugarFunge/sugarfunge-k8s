@@ -9,7 +9,7 @@ use k8s_openapi::api::{
 };
 use kube::{api::PostParams, core::ObjectMeta, Api, Client};
 
-use crate::{SugarfungeResource, config::IngressConfig};
+use crate::{config::IngressConfig, SugarfungeResource};
 
 pub const NAME: &str = "sf-ingress";
 

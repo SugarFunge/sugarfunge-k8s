@@ -34,7 +34,10 @@ Config (
             image: "sugarfunge.azurecr.io/node:latest",
             ws_port: 9945,
             p2p_port: 30335,
+            prometheus_port: 9090,
             node_name: "bob",
+            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602",
+            chainspec_url: "",
             bootnode: Some(
                 BootNode(
                     dns_url: "sf-node.default.svc.cluster.local",

@@ -10,6 +10,12 @@ pub mod resources;
 pub mod utils;
 
 #[derive(ArgEnum, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SugarfungeChainType {
+    Local,
+    Testnet,
+}
+
+#[derive(ArgEnum, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SugarfungeResource {
     Api,
     Explorer,
@@ -41,8 +47,12 @@ struct Cli {
     #[clap(short, long, default_value = "default")]
     namespace: String,
 
+    // Chain type to configure
+    #[clap(long, arg_enum)]
+    chain: Option<SugarfungeChainType>,
+
     // Configuration file when creating the service
-    #[clap(short)]
+    #[clap(long)]
     config: Option<String>,
 }
 
@@ -60,6 +70,12 @@ async fn main() -> anyhow::Result<()> {
                 std::process::exit(1);
             }
         };
+    }
+
+    let mut chain = SugarfungeChainType::Local;
+
+    if let Some(chain_type) = cli.chain {
+        chain = chain_type;
     }
 
     match cli.service {
@@ -130,7 +146,7 @@ async fn main() -> anyhow::Result<()> {
         SugarfungeResource::Node => match cli.action {
             CliAction::Create => {
                 if let Some(node_config) = config.node {
-                    resources::node::statefulset(&cli.namespace, node_config).await?;
+                    resources::node::statefulset(&cli.namespace, chain, node_config).await?;
                     Ok(())
                 } else {
                     println!("{}: failed to load config", resources::node::NAME);
@@ -181,14 +197,15 @@ async fn main() -> anyhow::Result<()> {
                     resources::ingress::create(&cli.namespace, ingress_config, resources).await?;
                     Ok(())
                 } else {
-                    println!("{}: failed to load the ingress_host in the config file", resources::ingress::NAME);
+                    println!(
+                        "{}: failed to load the ingress_host in the config file",
+                        resources::ingress::NAME
+                    );
                     std::process::exit(1);
                 }
             }
             CliAction::Delete => {
-                let resource_types: Vec<K8sResource> = vec![
-                    K8sResource::Ingress,
-                ];
+                let resource_types: Vec<K8sResource> = vec![K8sResource::Ingress];
                 Ok(
                     delete_resources(&cli.namespace, resources::ingress::NAME, resource_types)
                         .await?,

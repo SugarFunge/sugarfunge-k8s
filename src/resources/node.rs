@@ -5,7 +5,7 @@ use k8s_openapi::{
         apps::v1::{StatefulSet, StatefulSetSpec, StatefulSetStatus},
         core::v1::{
             ConfigMapEnvSource, Container, ContainerPort, EnvFromSource, PodSecurityContext,
-            PodSpec, PodTemplateSpec, ServicePort,
+            PodSpec, PodTemplateSpec, ServicePort, VolumeMount,
         },
     },
     apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
@@ -20,11 +20,34 @@ use kube::{
 use crate::{
     config::NodeConfig,
     utils::{create_configmap, create_service, ServiceData},
+    SugarfungeChainType,
 };
 
 pub const NAME: &str = "sf-node";
 
-fn container(config: NodeConfig) -> Container {
+fn init_container(config: NodeConfig) -> Container {
+    let volume_mount = VolumeMount {
+        name: "node-chainspec".to_string(),
+        mount_path: "/chainspec".to_string(),
+        ..Default::default()
+    };
+
+    Container {
+        name: NAME.to_owned() + "-config",
+        image: Some(config.wget_image),
+        image_pull_policy: Some("IfNotPresent".to_string()),
+        command: Some(vec![
+            "wget".to_string(),
+            "-O".to_string(),
+            "/chainspec/customSpec.json".to_string(),
+            config.chainspec_url.to_string(),
+        ]),
+        volume_mounts: Some(vec![volume_mount]),
+        ..Default::default()
+    }
+}
+
+fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
     let env = EnvFromSource {
         config_map_ref: Some(ConfigMapEnvSource {
             name: Some(NAME.to_string()),
@@ -41,6 +64,7 @@ fn container(config: NodeConfig) -> Container {
         "--unsafe-rpc-external".to_string(),
         "--rpc-methods=Unsafe".to_string(),
         "--rpc-cors=all".to_string(),
+        "--prometheus-external".to_string(),
     ];
 
     if let Some(bootnode) = config.bootnode {
@@ -62,18 +86,44 @@ fn container(config: NodeConfig) -> Container {
         ..Default::default()
     };
 
+    let prometheus_container_port = ContainerPort {
+        name: Some("prometheus-port".to_string()),
+        container_port: config.prometheus_port,
+        ..Default::default()
+    };
+
+    let mut volume_mounts: Option<Vec<VolumeMount>> = None;
+
+    if chain_type == SugarfungeChainType::Testnet {
+        volume_mounts = Some(vec![VolumeMount {
+            name: NAME.to_owned() + "-config",
+            mount_path: "/chainspec/customSpec.json".to_string(),
+            sub_path: Some("customSpec.json".to_string()),
+            ..Default::default()
+        }]);
+    }
+
     Container {
         env_from: Some(vec![env]),
         image: Some(config.image),
         image_pull_policy: Some("IfNotPresent".to_string()),
         name: NAME.to_string(),
-        ports: Some(vec![ws_container_port, p2p_container_port]),
+        ports: Some(vec![
+            ws_container_port,
+            p2p_container_port,
+            prometheus_container_port,
+        ]),
         args: Some(args),
+        volume_mounts,
         ..Default::default()
     }
 }
 
-pub async fn statefulset(namespace: &str, config: NodeConfig) -> anyhow::Result<StatefulSet> {
+pub async fn statefulset(
+    namespace: &str,
+    chain_type: SugarfungeChainType,
+    config: NodeConfig,
+) -> anyhow::Result<StatefulSet> {
     let client = Client::try_default().await?;
 
     let metadata = ObjectMeta {
@@ -107,7 +157,13 @@ pub async fn statefulset(namespace: &str, config: NodeConfig) -> anyhow::Result<
 
     let statefulsets: Api<StatefulSet> = Api::namespaced(client, namespace);
 
-    let container = container(config);
+    let mut init_containers: Option<Vec<Container>> = None;
+
+    if chain_type == SugarfungeChainType::Testnet {
+        init_containers = Some(vec![init_container(config.clone())]);
+    }
+
+    let container = container(chain_type, config);
 
     let node = StatefulSet {
         metadata: metadata.clone(),
@@ -119,6 +175,7 @@ pub async fn statefulset(namespace: &str, config: NodeConfig) -> anyhow::Result<
                         fs_group: Some(1000),
                         ..Default::default()
                     }),
+                    init_containers,
                     containers: vec![container],
                     ..Default::default()
                 }),

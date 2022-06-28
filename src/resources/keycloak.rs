@@ -35,7 +35,7 @@ fn init_container(config: KeycloakConfig) -> Container {
     };
 
     Container {
-        name: "sf-keycloak-config".to_string(),
+        name: NAME.to_owned() + "-config",
         image: Some(config.wget_image),
         image_pull_policy: Some("IfNotPresent".to_string()),
         command: Some(vec![
