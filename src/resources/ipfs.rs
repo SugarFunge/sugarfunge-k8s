@@ -37,21 +37,23 @@ user=ipfs
     ipfs config Datastore.StorageMax 5GB
     ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
     ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST"]'
-    echo "Removing all bootstrap nodes..."
-    ipfs bootstrap rm --all
+    chown -R ipfs $IPFS_PATH
 }
 
 # Check for the swarm key
 [ -f $IPFS_PATH/swarm.key ] || {
-echo "No swarm.key found, copying from mounted secret"
-[ -f /etc/ipfs-secrets/swarm.key ] || {
-    echo "No swarm.key found in IPFS secret"
-}
-cp -v /swarm/swarm.key $IPFS_PATH/swarm.key
-chmod 600 $IPFS_PATH/swarm.key
+    echo "No swarm.key found, copying from mounted secret"
+    [ -f /swarm/swarm.key ] || {
+        echo "No swarm.key found in IPFS secret... Exiting swarm configuration"
+        exit 0
+    }
+    echo "Removing all bootstrap nodes..."
+    ipfs bootstrap rm --all
+    cp -v /swarm/swarm.key $IPFS_PATH/swarm.key
+    chmod 600 $IPFS_PATH/swarm.key
+    chown -R ipfs $IPFS_PATH
 }
 
-chown -R ipfs $IPFS_PATH
 "#;
 
 fn init_container(config: IpfsConfig) -> Container {
