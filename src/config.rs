@@ -37,6 +37,27 @@ impl Default for ExplorerConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct IpfsConfig {
+    pub image: String,
+    pub swarm_tcp_port: i32,
+    pub swarm_udp_port: i32,
+    pub api_port: i32,
+    pub swarm_key: Option<String>,
+}
+
+impl Default for IpfsConfig {
+    fn default() -> Self {
+        Self {
+            image: "ipfs/go-ipfs:v0.13.0".to_string(),
+            swarm_tcp_port: 4001,
+            swarm_udp_port: 4002,
+            api_port: 5001,
+            swarm_key: None,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct KeycloakDatabaseConfig {
     pub db_database: String,
     pub db_user: String,
@@ -162,6 +183,7 @@ impl Default for IngressConfig {
 pub struct Config {
     pub api: Option<ApiConfig>,
     pub explorer: Option<ExplorerConfig>,
+    pub ipfs: Option<IpfsConfig>,
     pub keycloak: Option<KeycloakConfig>,
     pub node: Option<NodeConfig>,
     pub status: Option<StatusConfig>,
@@ -173,6 +195,7 @@ impl Default for Config {
         Self {
             api: Some(Default::default()),
             explorer: Some(Default::default()),
+            ipfs: Some(Default::default()),
             keycloak: Some(Default::default()),
             node: Some(Default::default()),
             status: Some(Default::default()),

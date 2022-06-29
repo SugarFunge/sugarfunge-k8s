@@ -14,6 +14,15 @@ Config (
             ws_url: "wss://node.sugarfunge.dev",
         )
     ),
+    ipfs: Some(
+        IpfsConfig (
+            image: "ipfs/go-ipfs:v0.13.0",
+            swarm_tcp_port: 4001,
+            swarm_udp_port: 4002,
+            api_port: 5001,
+            swarm_key: None,
+        )
+    ),
     keycloak: Some(
         KeycloakConfig (
             image: "quay.io/keycloak/keycloak:15.0.2",

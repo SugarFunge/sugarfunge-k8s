@@ -19,6 +19,7 @@ pub enum SugarfungeChainType {
 pub enum SugarfungeResource {
     Api,
     Explorer,
+    Ipfs,
     Keycloak,
     Node,
     Status,
@@ -116,6 +117,29 @@ async fn main() -> anyhow::Result<()> {
                 ];
                 Ok(
                     delete_resources(&cli.namespace, resources::explorer::NAME, resource_types)
+                        .await?,
+                )
+            }
+        },
+        SugarfungeResource::Ipfs => match cli.action {
+            CliAction::Create => {
+                if let Some(ipfs_config) = config.ipfs {
+                    resources::ipfs::deployment(&cli.namespace, ipfs_config).await?;
+                    Ok(())
+                } else {
+                    println!("{}: failed to load config", resources::ipfs::NAME);
+                    std::process::exit(1);
+                }
+            }
+            CliAction::Delete => {
+                let resource_types: Vec<K8sResource> = vec![
+                    K8sResource::Service,
+                    K8sResource::ConfigMap,
+                    K8sResource::Secret,
+                    K8sResource::Deployment,
+                ];
+                Ok(
+                    delete_resources(&cli.namespace, resources::ipfs::NAME, resource_types)
                         .await?,
                 )
             }
