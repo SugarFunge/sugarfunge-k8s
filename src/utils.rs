@@ -107,37 +107,37 @@ pub async fn delete_resources(
         match resource_type {
             K8sResource::Service => {
                 let services: Api<Service> = Api::namespaced(client.clone(), namespace);
-                if services.get_opt(name).await.is_ok() {
+                if services.get_opt(name).await?.is_some() {
                     services.delete(name, &dp).await?;
                 }
             }
             K8sResource::ConfigMap => {
                 let configmaps: Api<ConfigMap> = Api::namespaced(client.clone(), namespace);
-                if configmaps.get_opt(name).await.is_ok() {
+                if configmaps.get_opt(name).await?.is_some() {
                     configmaps.delete(name, &dp).await?;
                 }
             }
             K8sResource::Secret => {
                 let secrets: Api<Secret> = Api::namespaced(client.clone(), namespace);
-                if secrets.get_opt(name).await.is_ok() {
+                if secrets.get_opt(name).await?.is_some() {
                     secrets.delete(name, &dp).await?;
                 }
             }
             K8sResource::Deployment => {
                 let deployments: Api<Deployment> = Api::namespaced(client.clone(), namespace);
-                if deployments.get_opt(name).await.is_ok() {
+                if deployments.get_opt(name).await?.is_some() {
                     deployments.delete(name, &dp).await?;
                 }
             }
             K8sResource::StatefulSet => {
                 let statefulsets: Api<StatefulSet> = Api::namespaced(client.clone(), namespace);
-                if statefulsets.get_opt(name).await.is_ok() {
+                if statefulsets.get_opt(name).await?.is_some() {
                     statefulsets.delete(name, &dp).await?;
                 }
             }
             K8sResource::Ingress => {
                 let ingress_res: Api<Ingress> = Api::namespaced(client.clone(), namespace);
-                if ingress_res.get_opt(name).await.is_ok() {
+                if ingress_res.get_opt(name).await?.is_some() {
                     ingress_res.delete(name, &dp).await?;
                 }
             }
