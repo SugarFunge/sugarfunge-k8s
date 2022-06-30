@@ -4,8 +4,9 @@ use k8s_openapi::{
     api::{
         apps::v1::{StatefulSet, StatefulSetSpec, StatefulSetStatus},
         core::v1::{
-            ConfigMapEnvSource, Container, ContainerPort, EnvFromSource, PodSecurityContext,
-            PodSpec, PodTemplateSpec, ServicePort, VolumeMount,
+            ConfigMapEnvSource, Container, ContainerPort, EmptyDirVolumeSource, EnvFromSource,
+            PodSecurityContext, PodSpec, PodTemplateSpec, Secret, SecretVolumeSource, ServicePort,
+            Volume, VolumeMount,
         },
     },
     apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
@@ -18,23 +19,23 @@ use kube::{
 };
 
 use crate::{
-    config::NodeConfig,
+    config::{ChainSpecExternal, NodeConfig},
     utils::{create_configmap, create_service, ServiceData},
     SugarfungeChainType,
 };
 
 pub const NAME: &str = "sf-node";
 
-fn init_container(config: NodeConfig) -> Container {
+fn init_container(config: &ChainSpecExternal) -> Container {
     let volume_mount = VolumeMount {
-        name: "node-chainspec".to_string(),
+        name: NAME.to_string() + "-config",
         mount_path: "/chainspec".to_string(),
         ..Default::default()
     };
 
     Container {
         name: NAME.to_owned() + "-config",
-        image: Some(config.wget_image),
+        image: Some(config.wget_image.to_string()),
         image_pull_policy: Some("IfNotPresent".to_string()),
         command: Some(vec![
             "wget".to_string(),
@@ -68,10 +69,22 @@ fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
     ];
 
     if let Some(bootnode) = config.bootnode {
-        args.push(format!(
-            "--bootnodes=/dns4/{}/tcp/{}/p2p/{}",
-            bootnode.dns_url, bootnode.p2p_port, bootnode.private_key
-        ));
+        if let Some(dns_url) = bootnode.dns_url {
+            args.push(format!(
+                "--bootnodes=/dns4/{}/tcp/{}/p2p/{}",
+                dns_url, bootnode.p2p_port, bootnode.private_key
+            ));
+        } else if let Some(dns_ip) = bootnode.dns_ip {
+            args.push(format!(
+                "--bootnodes=/ip4/{}/tcp/{}/p2p/{}",
+                dns_ip, bootnode.p2p_port, bootnode.private_key
+            ));
+        } else {
+            args.push(format!(
+                "--bootnodes=/ip4/127.0.0.1/tcp/{}/p2p/{}",
+                bootnode.p2p_port, bootnode.private_key
+            ));
+        }
     }
 
     let ws_container_port = ContainerPort {
@@ -95,12 +108,19 @@ fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
     let mut volume_mounts: Option<Vec<VolumeMount>> = None;
 
     if chain_type == SugarfungeChainType::Testnet {
+        let mut chainspec_file_name = "customSpec.json".to_string();
+
+        if let Some(file_name) = config.chainspec_file_name {
+            chainspec_file_name = file_name.to_string();
+        }
+
         volume_mounts = Some(vec![VolumeMount {
             name: NAME.to_owned() + "-config",
-            mount_path: "/chainspec/customSpec.json".to_string(),
-            sub_path: Some("customSpec.json".to_string()),
+            mount_path: "/chainspec/".to_string() + &chainspec_file_name,
+            sub_path: Some(chainspec_file_name.to_string()),
             ..Default::default()
         }]);
+        args.push("--chain=/chainspec/".to_string() + &chainspec_file_name);
     }
 
     Container {
@@ -135,6 +155,42 @@ pub async fn statefulset(
         ..Default::default()
     };
 
+    let mut init_containers: Option<Vec<Container>> = None;
+
+    let mut volumes: Option<Vec<Volume>> = None;
+
+    if chain_type == SugarfungeChainType::Testnet {
+        // Check if the chainspec comes from an external url using the config file.
+        // Otherwise check if a secret was created without the tool that contains the chainspec.
+        if let Some(ref chainspec) = config.chainspec_ext {
+            volumes = Some(vec![Volume {
+                name: NAME.to_string() + "-config",
+                empty_dir: Some(EmptyDirVolumeSource::default()),
+                ..Default::default()
+            }]);
+
+            init_containers = Some(vec![init_container(chainspec)]);
+        } else {
+            let secrets: Api<Secret> = Api::namespaced(client.clone(), namespace);
+
+            if secrets.get_opt(NAME).await?.is_none() {
+                return Err(anyhow::Error::msg(format!(
+                    "The secret {} does not exist",
+                    NAME
+                )));
+            }
+
+            volumes = Some(vec![Volume {
+                name: NAME.to_string() + "-config",
+                secret: Some(SecretVolumeSource {
+                    secret_name: Some(NAME.to_string()),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }]);
+        }
+    }
+
     let service_data = ServiceData {
         service_port: ServicePort {
             protocol: Some("TCP".to_string()),
@@ -155,13 +211,7 @@ pub async fn statefulset(
     let _configmap =
         create_configmap(client.clone(), namespace, metadata.clone(), configmap_data).await?;
 
-    let statefulsets: Api<StatefulSet> = Api::namespaced(client, namespace);
-
-    let mut init_containers: Option<Vec<Container>> = None;
-
-    if chain_type == SugarfungeChainType::Testnet {
-        init_containers = Some(vec![init_container(config.clone())]);
-    }
+    let statefulsets: Api<StatefulSet> = Api::namespaced(client.clone(), namespace);
 
     let container = container(chain_type, config);
 
@@ -177,6 +227,7 @@ pub async fn statefulset(
                     }),
                     init_containers,
                     containers: vec![container],
+                    volumes,
                     ..Default::default()
                 }),
             },

@@ -46,11 +46,12 @@ Config (
             p2p_port: 30335,
             prometheus_port: 9090,
             node_name: "bob",
-            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602",
-            chainspec_url: "",
+            chainspec_file_name: None,
+            chainspec_ext: None,
             bootnode: Some(
                 BootNode(
-                    dns_url: "sf-node.default.svc.cluster.local",
+                    dns_url: Some("sf-node.default.svc.cluster.local"),
+                    dns_ip: None,
                     p2p_port: 30334,
                     private_key: "12D3KooWGzN9EZLNkxEVeApishpq8d3pzChPmw9jQ9kra3csTAhk",
                 )

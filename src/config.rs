@@ -103,7 +103,8 @@ impl Default for KeycloakConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct BootNode {
-    pub dns_url: String,
+    pub dns_url: Option<String>,
+    pub dns_ip: Option<String>,
     pub p2p_port: i32,
     pub private_key: String,
 }
@@ -111,11 +112,18 @@ pub struct BootNode {
 impl Default for BootNode {
     fn default() -> Self {
         Self {
-            dns_url: "sf-node.default.svc.cluster.local".to_string(),
+            dns_url: Some("sf-node.default.svc.cluster.local".to_string()),
+            dns_ip: None,
             p2p_port: 30334,
             private_key: "12D3KooWGzN9EZLNkxEVeApishpq8d3pzChPmw9jQ9kra3csTAhk".to_string(),
         }
     }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct ChainSpecExternal {
+    pub wget_image: String,
+    pub chainspec_url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -125,8 +133,8 @@ pub struct NodeConfig {
     pub p2p_port: i32,
     pub prometheus_port: i32,
     pub node_name: String,
-    pub wget_image: String,
-    pub chainspec_url: String,
+    pub chainspec_file_name: Option<String>,
+    pub chainspec_ext: Option<ChainSpecExternal>,
     pub bootnode: Option<BootNode>,
 }
 
@@ -138,9 +146,8 @@ impl Default for NodeConfig {
             p2p_port: 30334,
             prometheus_port: 9090,
             node_name: "alice".to_string(),
-            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602"
-                .to_string(),
-            chainspec_url: "".to_string(),
+            chainspec_file_name: Some("customSpec.json".to_string()),
+            chainspec_ext: None,
             bootnode: None,
         }
     }
