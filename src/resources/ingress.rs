@@ -63,6 +63,10 @@ pub async fn create(
                 service_name = super::explorer::NAME.to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
+            SugarfungeResource::Ipfs => {
+                service_name = super::ipfs::NAME.to_string();
+                service_port = get_service_port(client.clone(), namespace, &service_name).await;
+            }
             SugarfungeResource::Keycloak => {
                 service_name = super::keycloak::NAME.to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
@@ -93,12 +97,15 @@ pub async fn create(
             path_type: "Prefix".to_string(),
         };
 
+        let service_name_parsed_as_host =
+            service_name.replace("sf-", "").to_owned() + "." + &ingress_config.host;
+
         let rule = IngressRule {
-            host: Some(service_name.replace("sf-", "").to_owned() + "." + &ingress_config.host),
+            host: Some(service_name_parsed_as_host.to_string()),
             http: Some(HTTPIngressRuleValue { paths: vec![path] }),
         };
 
-        tls_hosts.push(service_name);
+        tls_hosts.push(service_name_parsed_as_host);
         rules.push(rule);
     }
 

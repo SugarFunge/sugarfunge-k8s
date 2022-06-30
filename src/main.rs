@@ -210,6 +210,7 @@ async fn main() -> anyhow::Result<()> {
                 let resources: Vec<SugarfungeResource> = vec![
                     SugarfungeResource::Api,
                     SugarfungeResource::Explorer,
+                    SugarfungeResource::Ipfs,
                     SugarfungeResource::Keycloak,
                     SugarfungeResource::Node,
                     SugarfungeResource::Status,
