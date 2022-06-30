@@ -26,8 +26,9 @@ Config (
     keycloak: Some(
         KeycloakConfig (
             image: "quay.io/keycloak/keycloak:15.0.2",
-            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602",
             port: 8080,
+            admin_username: "keycloak",
+            admin_password: "keycloak",
             db_config: KeycloakDatabaseConfig (
                 db_database: "keycloak",
                 db_user: "keycloak",

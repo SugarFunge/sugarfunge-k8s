@@ -83,18 +83,19 @@ impl Default for KeycloakDatabaseConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct KeycloakConfig {
     pub image: String,
-    pub wget_image: String,
     pub port: i32,
+    pub admin_username: String,
+    pub admin_password: String,
     pub db_config: KeycloakDatabaseConfig,
 }
 
 impl Default for KeycloakConfig {
     fn default() -> Self {
         Self {
-            image: "quay.io/keycloak/keycloak:15.0.2".to_string(),
-            wget_image: "vertexstudio.azurecr.io/wget:84cfc94ef093db2b20444b6a6793eb6ae6136602"
-                .to_string(),
+            image: "quay.io/keycloak/keycloak:18.0.0".to_string(),
             port: 8080,
+            admin_username: "keycloak".to_string(),
+            admin_password: "keycloak".to_string(),
             db_config: Default::default(),
         }
     }

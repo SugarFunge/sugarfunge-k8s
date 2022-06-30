@@ -138,10 +138,7 @@ async fn main() -> anyhow::Result<()> {
                     K8sResource::Secret,
                     K8sResource::Deployment,
                 ];
-                Ok(
-                    delete_resources(&cli.namespace, resources::ipfs::NAME, resource_types)
-                        .await?,
-                )
+                Ok(delete_resources(&cli.namespace, resources::ipfs::NAME, resource_types).await?)
             }
         },
         SugarfungeResource::Keycloak => match cli.action {

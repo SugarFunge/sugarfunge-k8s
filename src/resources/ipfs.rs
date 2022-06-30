@@ -5,7 +5,8 @@ use k8s_openapi::{
         apps::v1::{Deployment, DeploymentSpec, DeploymentStatus},
         core::v1::{
             ConfigMapVolumeSource, Container, ContainerPort, EmptyDirVolumeSource, PodSpec,
-            PodTemplateSpec, Probe, ServicePort, TCPSocketAction, Volume, VolumeMount, SecretVolumeSource,
+            PodTemplateSpec, Probe, SecretVolumeSource, ServicePort, TCPSocketAction, Volume,
+            VolumeMount,
         },
     },
     apimachinery::pkg::{apis::meta::v1::LabelSelector, util::intstr::IntOrString},
@@ -17,7 +18,7 @@ use kube::{
 
 use crate::{
     config::IpfsConfig,
-    utils::{create_configmap, create_service, ServiceData, create_secret},
+    utils::{create_configmap, create_secret, create_service, ServiceData},
 };
 
 pub const NAME: &str = "sf-ipfs";
@@ -57,7 +58,6 @@ user=ipfs
 "#;
 
 fn init_container(config: IpfsConfig) -> Container {
-
     let mut volume_mounts: Vec<VolumeMount> = vec![];
 
     let data_volume_mount = VolumeMount {
@@ -177,7 +177,8 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
         let key_file = "/key/swarm/psk/1.0.0/\n/base16/\n".to_string() + swarm_key;
         let secret_data = BTreeMap::from([("swarm.key".to_string(), key_file)]);
 
-        let _secret = create_secret(client.clone(), namespace, metadata.clone(), secret_data).await?;
+        let _secret =
+            create_secret(client.clone(), namespace, metadata.clone(), secret_data).await?;
 
         let swarm_key_volume = Volume {
             name: NAME.to_string() + "-swarm",
@@ -187,7 +188,7 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
             }),
             ..Default::default()
         };
-    
+
         volumes.push(swarm_key_volume);
     }
 
