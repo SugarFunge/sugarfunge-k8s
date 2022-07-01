@@ -9,9 +9,7 @@ use k8s_openapi::api::{
 };
 use kube::{api::PostParams, core::ObjectMeta, Api, Client};
 
-use crate::{config::IngressConfig, SugarfungeResource};
-
-pub const NAME: &str = "sf-ingress";
+use crate::{config::Config, SugarfungeResource};
 
 pub async fn get_service_port(client: Client, namespace: &str, name: &str) -> i32 {
     let services: Api<Service> = Api::namespaced(client, namespace);
@@ -42,41 +40,59 @@ pub async fn get_service_port(client: Client, namespace: &str, name: &str) -> i3
 
 pub async fn create(
     namespace: &str,
-    ingress_config: IngressConfig,
+    config: Config,
     resources: Vec<SugarfungeResource>,
 ) -> anyhow::Result<Ingress> {
     let client = Client::try_default().await?;
     let ingress_res: Api<Ingress> = Api::namespaced(client.clone(), namespace);
+    let ingress_error = format!("failed to load config for {}", SugarfungeResource::Ingress);
+    let ingress_config = config.ingress.clone().expect(&ingress_error);
     let mut tls_hosts: Vec<String> = vec![];
     let mut rules: Vec<IngressRule> = vec![];
 
     for resource in resources {
         let mut service_name: String = "".to_string();
         let mut service_port: i32 = 80;
+        let error_message = format!("failed to load config for {}", resource);
 
         match resource {
             SugarfungeResource::Api => {
-                service_name = super::api::NAME.to_string();
+                service_name = config.api.clone().expect(&error_message).name.to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
             SugarfungeResource::Explorer => {
-                service_name = super::explorer::NAME.to_string();
+                service_name = config
+                    .explorer
+                    .clone()
+                    .expect(&error_message)
+                    .name
+                    .to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
             SugarfungeResource::Ipfs => {
-                service_name = super::ipfs::NAME.to_string();
+                service_name = config.ipfs.clone().expect(&error_message).name.to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
             SugarfungeResource::Keycloak => {
-                service_name = super::keycloak::NAME.to_string();
+                service_name = config
+                    .keycloak
+                    .clone()
+                    .expect(&error_message)
+                    .name
+                    .to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
             SugarfungeResource::Node => {
-                service_name = super::node::NAME.to_string();
+                service_name = config.node.clone().expect(&error_message).name.to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
             SugarfungeResource::Status => {
-                service_name = super::status::NAME.to_string();
+                service_name = config
+                    .status
+                    .clone()
+                    .expect(&error_message)
+                    .name
+                    .to_string();
                 service_port = get_service_port(client.clone(), namespace, &service_name).await;
             }
             _ => {}
@@ -116,10 +132,10 @@ pub async fn create(
 
     let ingress = Ingress {
         metadata: ObjectMeta {
-            name: Some(NAME.to_string()),
+            name: Some(ingress_config.name.to_string()),
             labels: Some(BTreeMap::from([(
                 "app.kubernetes.io/name".to_string(),
-                NAME.to_string(),
+                ingress_config.name.to_string(),
             )])),
             annotations: Some(BTreeMap::from([(
                 "cert-manager.io/cluster-issuer".to_string(),

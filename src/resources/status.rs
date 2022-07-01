@@ -22,12 +22,10 @@ use crate::{
     utils::{create_configmap, create_service, ServiceData},
 };
 
-pub const NAME: &str = "sf-status";
-
-fn container() -> Container {
+fn container(config: StatusConfig) -> Container {
     let env = EnvFromSource {
         config_map_ref: Some(ConfigMapEnvSource {
-            name: Some(NAME.to_string()),
+            name: Some(config.name.to_string()),
             optional: Some(false),
         }),
         ..Default::default()
@@ -42,7 +40,7 @@ fn container() -> Container {
         env_from: Some(vec![env]),
         image: Some("sugarfunge.azurecr.io/status:latest".to_string()),
         image_pull_policy: Some("IfNotPresent".to_string()),
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         ports: Some(vec![container_port]),
         ..Default::default()
     }
@@ -52,10 +50,10 @@ pub async fn deployment(namespace: &str, config: StatusConfig) -> anyhow::Result
     let client = Client::try_default().await?;
 
     let metadata = ObjectMeta {
-        name: Some(NAME.to_string()),
+        name: Some(config.name.to_string()),
         labels: Some(BTreeMap::from([(
             "app.kubernetes.io/name".to_string(),
-            NAME.to_string(),
+            config.name.to_string(),
         )])),
         ..Default::default()
     };
@@ -67,7 +65,7 @@ pub async fn deployment(namespace: &str, config: StatusConfig) -> anyhow::Result
             target_port: Some(IntOrString::Int(config.port)),
             ..Default::default()
         },
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         service_type: Some("NodePort".to_string()),
         ..Default::default()
     };
@@ -88,7 +86,7 @@ pub async fn deployment(namespace: &str, config: StatusConfig) -> anyhow::Result
 
     let deployments: Api<Deployment> = Api::namespaced(client, namespace);
 
-    let container = container();
+    let container = container(config.clone());
 
     let status = Deployment {
         metadata: metadata.clone(),
@@ -103,7 +101,7 @@ pub async fn deployment(namespace: &str, config: StatusConfig) -> anyhow::Result
             selector: LabelSelector {
                 match_labels: Some(BTreeMap::from([(
                     "app.kubernetes.io/name".to_string(),
-                    NAME.to_string(),
+                    config.name.to_string(),
                 )])),
                 ..Default::default()
             },

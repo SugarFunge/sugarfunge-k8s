@@ -19,29 +19,39 @@ use kube::{
 };
 
 use crate::{
-    config::{ChainSpecExternal, NodeConfig},
+    config::NodeConfig,
     utils::{create_configmap, create_service, ServiceData},
     SugarfungeChainType,
 };
 
-pub const NAME: &str = "sf-node";
-
-fn init_container(config: &ChainSpecExternal) -> Container {
+fn init_container(config: &NodeConfig) -> Container {
     let volume_mount = VolumeMount {
-        name: NAME.to_string() + "-config",
+        name: config.name.to_string() + "-config",
         mount_path: "/chainspec".to_string(),
         ..Default::default()
     };
 
     Container {
-        name: NAME.to_owned() + "-config",
-        image: Some(config.wget_image.to_string()),
+        name: config.name.to_owned() + "-config",
+        image: Some(
+            config
+                .chainspec_ext
+                .as_ref()
+                .unwrap()
+                .wget_image
+                .to_string(),
+        ),
         image_pull_policy: Some("IfNotPresent".to_string()),
         command: Some(vec![
             "wget".to_string(),
             "-O".to_string(),
             "/chainspec/customSpec.json".to_string(),
-            config.chainspec_url.to_string(),
+            config
+                .chainspec_ext
+                .as_ref()
+                .unwrap()
+                .chainspec_url
+                .to_string(),
         ]),
         volume_mounts: Some(vec![volume_mount]),
         ..Default::default()
@@ -51,7 +61,7 @@ fn init_container(config: &ChainSpecExternal) -> Container {
 fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
     let env = EnvFromSource {
         config_map_ref: Some(ConfigMapEnvSource {
-            name: Some(NAME.to_string()),
+            name: Some(config.name.to_string()),
             optional: Some(false),
         }),
         ..Default::default()
@@ -115,7 +125,7 @@ fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
         }
 
         volume_mounts = Some(vec![VolumeMount {
-            name: NAME.to_owned() + "-config",
+            name: config.name.to_owned() + "-config",
             mount_path: "/chainspec/".to_string() + &chainspec_file_name,
             sub_path: Some(chainspec_file_name.to_string()),
             ..Default::default()
@@ -127,7 +137,7 @@ fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
         env_from: Some(vec![env]),
         image: Some(config.image),
         image_pull_policy: Some("IfNotPresent".to_string()),
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         ports: Some(vec![
             ws_container_port,
             p2p_container_port,
@@ -147,10 +157,10 @@ pub async fn statefulset(
     let client = Client::try_default().await?;
 
     let metadata = ObjectMeta {
-        name: Some(NAME.to_string()),
+        name: Some(config.name.to_string()),
         labels: Some(BTreeMap::from([(
             "app.kubernetes.io/name".to_string(),
-            NAME.to_string(),
+            config.name.to_string(),
         )])),
         ..Default::default()
     };
@@ -162,28 +172,28 @@ pub async fn statefulset(
     if chain_type == SugarfungeChainType::Testnet {
         // Check if the chainspec comes from an external url using the config file.
         // Otherwise check if a secret was created without the tool that contains the chainspec.
-        if let Some(ref chainspec) = config.chainspec_ext {
+        if config.chainspec_ext.is_some() {
             volumes = Some(vec![Volume {
-                name: NAME.to_string() + "-config",
+                name: config.name.to_string() + "-config",
                 empty_dir: Some(EmptyDirVolumeSource::default()),
                 ..Default::default()
             }]);
 
-            init_containers = Some(vec![init_container(chainspec)]);
+            init_containers = Some(vec![init_container(&config)]);
         } else {
             let secrets: Api<Secret> = Api::namespaced(client.clone(), namespace);
 
-            if secrets.get_opt(NAME).await?.is_none() {
+            if secrets.get_opt(&config.name).await?.is_none() {
                 return Err(anyhow::Error::msg(format!(
                     "The secret {} does not exist",
-                    NAME
+                    config.name
                 )));
             }
 
             volumes = Some(vec![Volume {
-                name: NAME.to_string() + "-config",
+                name: config.name.to_string() + "-config",
                 secret: Some(SecretVolumeSource {
-                    secret_name: Some(NAME.to_string()),
+                    secret_name: Some(config.name.to_string()),
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -198,7 +208,7 @@ pub async fn statefulset(
             target_port: Some(IntOrString::Int(config.ws_port)),
             ..Default::default()
         },
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         cluster_ip: Some("None".to_string()),
         ..Default::default()
     };
@@ -213,7 +223,7 @@ pub async fn statefulset(
 
     let statefulsets: Api<StatefulSet> = Api::namespaced(client.clone(), namespace);
 
-    let container = container(chain_type, config);
+    let container = container(chain_type, config.clone());
 
     let node = StatefulSet {
         metadata: metadata.clone(),
@@ -234,7 +244,7 @@ pub async fn statefulset(
             selector: LabelSelector {
                 match_labels: Some(BTreeMap::from([(
                     "app.kubernetes.io/name".to_string(),
-                    NAME.to_string(),
+                    config.name.to_string(),
                 )])),
                 ..Default::default()
             },

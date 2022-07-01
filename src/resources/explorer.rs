@@ -22,12 +22,10 @@ use crate::{
     utils::{create_configmap, create_service, ServiceData},
 };
 
-pub const NAME: &str = "sf-explorer";
-
 fn container(config: ExplorerConfig) -> Container {
     let env = EnvFromSource {
         config_map_ref: Some(ConfigMapEnvSource {
-            name: Some(NAME.to_string()),
+            name: Some(config.name.to_string()),
             optional: Some(false),
         }),
         ..Default::default()
@@ -42,7 +40,7 @@ fn container(config: ExplorerConfig) -> Container {
         env_from: Some(vec![env]),
         image: Some(config.image),
         image_pull_policy: Some("IfNotPresent".to_string()),
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         ports: Some(vec![container_port]),
         ..Default::default()
     }
@@ -52,10 +50,10 @@ pub async fn deployment(namespace: &str, config: ExplorerConfig) -> anyhow::Resu
     let client = Client::try_default().await?;
 
     let metadata = ObjectMeta {
-        name: Some(NAME.to_string()),
+        name: Some(config.name.to_string()),
         labels: Some(BTreeMap::from([(
             "app.kubernetes.io/name".to_string(),
-            NAME.to_string(),
+            config.name.to_string(),
         )])),
         ..Default::default()
     };
@@ -67,7 +65,7 @@ pub async fn deployment(namespace: &str, config: ExplorerConfig) -> anyhow::Resu
             target_port: Some(IntOrString::Int(config.port)),
             ..Default::default()
         },
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         service_type: Some("NodePort".to_string()),
         ..Default::default()
     };
@@ -82,7 +80,7 @@ pub async fn deployment(namespace: &str, config: ExplorerConfig) -> anyhow::Resu
 
     let deployments: Api<Deployment> = Api::namespaced(client, namespace);
 
-    let container = container(config);
+    let container = container(config.clone());
 
     let explorer = Deployment {
         metadata: metadata.clone(),
@@ -97,7 +95,7 @@ pub async fn deployment(namespace: &str, config: ExplorerConfig) -> anyhow::Resu
             selector: LabelSelector {
                 match_labels: Some(BTreeMap::from([(
                     "app.kubernetes.io/name".to_string(),
-                    NAME.to_string(),
+                    config.name.to_string(),
                 )])),
                 ..Default::default()
             },

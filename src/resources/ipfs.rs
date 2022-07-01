@@ -21,8 +21,6 @@ use crate::{
     utils::{create_configmap, create_secret, create_service, ServiceData},
 };
 
-pub const NAME: &str = "sf-ipfs";
-
 const CONFIG_FILE: &str = r#"
 #!/bin/sh
 set -e
@@ -61,7 +59,7 @@ fn init_container(config: IpfsConfig) -> Container {
     let mut volume_mounts: Vec<VolumeMount> = vec![];
 
     let data_volume_mount = VolumeMount {
-        name: NAME.to_string() + "-data",
+        name: config.name.to_string() + "-data",
         mount_path: "/data/ipfs".to_string(),
         ..Default::default()
     };
@@ -69,7 +67,7 @@ fn init_container(config: IpfsConfig) -> Container {
     volume_mounts.push(data_volume_mount);
 
     let config_volume_mount = VolumeMount {
-        name: NAME.to_string() + "-config",
+        name: config.name.to_string() + "-config",
         mount_path: "/custom".to_string(),
         ..Default::default()
     };
@@ -78,7 +76,7 @@ fn init_container(config: IpfsConfig) -> Container {
 
     if config.swarm_key.is_some() {
         let swarm_volume_mount = VolumeMount {
-            name: NAME.to_string() + "-swarm",
+            name: config.name.to_string() + "-swarm",
             mount_path: "/swarm".to_string(),
             ..Default::default()
         };
@@ -93,7 +91,7 @@ fn init_container(config: IpfsConfig) -> Container {
             "sh".to_string(),
             "/custom/configure-ipfs.sh".to_string(),
         ]),
-        name: "configure-".to_string() + NAME,
+        name: "configure-".to_string() + &config.name,
         volume_mounts: Some(volume_mounts),
         ..Default::default()
     }
@@ -119,7 +117,7 @@ fn container(config: IpfsConfig) -> Container {
     };
 
     let volume_mount = VolumeMount {
-        name: NAME.to_string() + "-data",
+        name: config.name.to_string() + "-data",
         mount_path: "/data/ipfs".to_string(),
         ..Default::default()
     };
@@ -127,7 +125,7 @@ fn container(config: IpfsConfig) -> Container {
     Container {
         image: Some(config.image),
         image_pull_policy: Some("IfNotPresent".to_string()),
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         ports: Some(vec![swarm_tcp_port, swarm_upd_port, api_container_port]),
         volume_mounts: Some(vec![volume_mount]),
         liveness_probe: Some(Probe {
@@ -150,10 +148,10 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
     let mut volumes: Vec<Volume> = vec![];
 
     let metadata = ObjectMeta {
-        name: Some(NAME.to_string()),
+        name: Some(config.name.to_string()),
         labels: Some(BTreeMap::from([(
             "app.kubernetes.io/name".to_string(),
-            NAME.to_string(),
+            config.name.to_string(),
         )])),
         ..Default::default()
     };
@@ -165,7 +163,7 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
             target_port: Some(IntOrString::Int(config.api_port)),
             ..Default::default()
         },
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         service_type: Some("NodePort".to_string()),
         ..Default::default()
     };
@@ -181,9 +179,9 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
             create_secret(client.clone(), namespace, metadata.clone(), secret_data).await?;
 
         let swarm_key_volume = Volume {
-            name: NAME.to_string() + "-swarm",
+            name: config.name.to_string() + "-swarm",
             secret: Some(SecretVolumeSource {
-                secret_name: Some(NAME.to_string()),
+                secret_name: Some(config.name.to_string()),
                 ..Default::default()
             }),
             ..Default::default()
@@ -202,10 +200,10 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
 
     let init_container = init_container(config.clone());
 
-    let container = container(config);
+    let container = container(config.clone());
 
     let data_volume = Volume {
-        name: NAME.to_string() + "-data",
+        name: config.name.to_string() + "-data",
         empty_dir: Some(EmptyDirVolumeSource::default()),
         ..Default::default()
     };
@@ -213,9 +211,9 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
     volumes.push(data_volume);
 
     let config_files_volume = Volume {
-        name: NAME.to_string() + "-config",
+        name: config.name.to_string() + "-config",
         config_map: Some(ConfigMapVolumeSource {
-            name: Some(NAME.to_string()),
+            name: Some(config.name.to_string()),
             ..Default::default()
         }),
         ..Default::default()
@@ -238,7 +236,7 @@ pub async fn deployment(namespace: &str, config: IpfsConfig) -> anyhow::Result<D
             selector: LabelSelector {
                 match_labels: Some(BTreeMap::from([(
                     "app.kubernetes.io/name".to_string(),
-                    NAME.to_string(),
+                    config.name.to_string(),
                 )])),
                 ..Default::default()
             },

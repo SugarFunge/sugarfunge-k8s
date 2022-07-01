@@ -2,6 +2,7 @@ use std::fs::File;
 
 use clap::{ArgEnum, Parser};
 use config::Config;
+use derive_more::Display;
 use ron::de::from_reader;
 use utils::{delete_resources, K8sResource};
 
@@ -15,7 +16,7 @@ pub enum SugarfungeChainType {
     Testnet,
 }
 
-#[derive(ArgEnum, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(ArgEnum, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Display)]
 pub enum SugarfungeResource {
     Api,
     Explorer,
@@ -79,130 +80,105 @@ async fn main() -> anyhow::Result<()> {
         chain = chain_type;
     }
 
+    let error_message = format!("failed to load config for {}", cli.service);
+
     match cli.service {
         SugarfungeResource::Api => match cli.action {
             CliAction::Create => {
-                if let Some(api_config) = config.api {
-                    resources::api::deployment(&cli.namespace, api_config).await?;
-                    Ok(())
-                } else {
-                    println!("{}: failed to load config", resources::api::NAME);
-                    std::process::exit(1);
-                }
+                let api_config = config.api.expect(&error_message);
+                resources::api::deployment(&cli.namespace, api_config).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let api_name = config.api.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![
                     K8sResource::Service,
                     K8sResource::ConfigMap,
                     K8sResource::Deployment,
                 ];
-                Ok(delete_resources(&cli.namespace, resources::api::NAME, resource_types).await?)
+                Ok(delete_resources(&cli.namespace, &api_name, resource_types).await?)
             }
         },
         SugarfungeResource::Explorer => match cli.action {
             CliAction::Create => {
-                if let Some(explorer_config) = config.explorer {
-                    resources::explorer::deployment(&cli.namespace, explorer_config).await?;
-                    Ok(())
-                } else {
-                    println!("{}: failed to load config", resources::explorer::NAME);
-                    std::process::exit(1);
-                }
+                let explorer_config = config.explorer.expect(&error_message);
+                resources::explorer::deployment(&cli.namespace, explorer_config).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let explorer_name = config.explorer.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![
                     K8sResource::Service,
                     K8sResource::ConfigMap,
                     K8sResource::Deployment,
                 ];
-                Ok(
-                    delete_resources(&cli.namespace, resources::explorer::NAME, resource_types)
-                        .await?,
-                )
+                Ok(delete_resources(&cli.namespace, &explorer_name, resource_types).await?)
             }
         },
         SugarfungeResource::Ipfs => match cli.action {
             CliAction::Create => {
-                if let Some(ipfs_config) = config.ipfs {
-                    resources::ipfs::deployment(&cli.namespace, ipfs_config).await?;
-                    Ok(())
-                } else {
-                    println!("{}: failed to load config", resources::ipfs::NAME);
-                    std::process::exit(1);
-                }
+                let ipfs_config = config.ipfs.expect(&error_message);
+                resources::ipfs::deployment(&cli.namespace, ipfs_config).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let ipfs_name = config.ipfs.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![
                     K8sResource::Service,
                     K8sResource::ConfigMap,
                     K8sResource::Secret,
                     K8sResource::Deployment,
                 ];
-                Ok(delete_resources(&cli.namespace, resources::ipfs::NAME, resource_types).await?)
+                Ok(delete_resources(&cli.namespace, &ipfs_name, resource_types).await?)
             }
         },
         SugarfungeResource::Keycloak => match cli.action {
             CliAction::Create => {
-                if let Some(keycloak_config) = config.keycloak {
-                    resources::keycloak::deployment(&cli.namespace, keycloak_config).await?;
-                    Ok(())
-                } else {
-                    println!("{}: failed to load config", resources::keycloak::NAME);
-                    std::process::exit(1);
-                }
+                let keycloak_config = config.keycloak.expect(&error_message);
+                resources::keycloak::deployment(&cli.namespace, keycloak_config).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let keycloak_name = config.keycloak.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![
                     K8sResource::Service,
                     K8sResource::ConfigMap,
                     K8sResource::Secret,
                     K8sResource::Deployment,
                 ];
-                Ok(
-                    delete_resources(&cli.namespace, resources::keycloak::NAME, resource_types)
-                        .await?,
-                )
+                Ok(delete_resources(&cli.namespace, &keycloak_name, resource_types).await?)
             }
         },
         SugarfungeResource::Node => match cli.action {
             CliAction::Create => {
-                if let Some(node_config) = config.node {
-                    resources::node::statefulset(&cli.namespace, chain, node_config).await?;
-                    Ok(())
-                } else {
-                    println!("{}: failed to load config", resources::node::NAME);
-                    std::process::exit(1);
-                }
+                let node_config = config.node.expect(&error_message);
+                resources::node::statefulset(&cli.namespace, chain, node_config).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let node_name = config.node.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![
                     K8sResource::Service,
                     K8sResource::ConfigMap,
                     K8sResource::StatefulSet,
                 ];
-                Ok(delete_resources(&cli.namespace, resources::node::NAME, resource_types).await?)
+                Ok(delete_resources(&cli.namespace, &node_name, resource_types).await?)
             }
         },
         SugarfungeResource::Status => match cli.action {
             CliAction::Create => {
-                if let Some(status_config) = config.status {
-                    resources::status::deployment(&cli.namespace, status_config).await?;
-                    Ok(())
-                } else {
-                    println!("{}: failed to load config", resources::status::NAME);
-                    std::process::exit(1);
-                }
+                let status_config = config.status.expect(&error_message);
+                resources::status::deployment(&cli.namespace, status_config).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let status_name = config.status.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![
                     K8sResource::Service,
                     K8sResource::ConfigMap,
                     K8sResource::Deployment,
                 ];
-                Ok(
-                    delete_resources(&cli.namespace, resources::status::NAME, resource_types)
-                        .await?,
-                )
+                Ok(delete_resources(&cli.namespace, &status_name, resource_types).await?)
             }
         },
         SugarfungeResource::Ingress => match cli.action {
@@ -215,23 +191,13 @@ async fn main() -> anyhow::Result<()> {
                     SugarfungeResource::Node,
                     SugarfungeResource::Status,
                 ];
-                if let Some(ingress_config) = config.ingress {
-                    resources::ingress::create(&cli.namespace, ingress_config, resources).await?;
-                    Ok(())
-                } else {
-                    println!(
-                        "{}: failed to load the ingress_host in the config file",
-                        resources::ingress::NAME
-                    );
-                    std::process::exit(1);
-                }
+                resources::ingress::create(&cli.namespace, config, resources).await?;
+                Ok(())
             }
             CliAction::Delete => {
+                let ingress_name = config.ingress.expect(&error_message).name;
                 let resource_types: Vec<K8sResource> = vec![K8sResource::Ingress];
-                Ok(
-                    delete_resources(&cli.namespace, resources::ingress::NAME, resource_types)
-                        .await?,
-                )
+                Ok(delete_resources(&cli.namespace, &ingress_name, resource_types).await?)
             }
         },
     }

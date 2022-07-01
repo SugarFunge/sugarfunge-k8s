@@ -23,12 +23,10 @@ use crate::{
     utils::{create_configmap, create_secret, create_service},
 };
 
-pub const NAME: &str = "sf-keycloak";
-
 fn container(config: KeycloakConfig) -> Container {
     let env_configmap = EnvFromSource {
         config_map_ref: Some(ConfigMapEnvSource {
-            name: Some(NAME.to_string()),
+            name: Some(config.name.to_string()),
             optional: Some(false),
         }),
         ..Default::default()
@@ -36,7 +34,7 @@ fn container(config: KeycloakConfig) -> Container {
 
     let env_secret = EnvFromSource {
         secret_ref: Some(SecretEnvSource {
-            name: Some(NAME.to_string()),
+            name: Some(config.name.to_string()),
             optional: Some(false),
         }),
         ..Default::default()
@@ -51,7 +49,7 @@ fn container(config: KeycloakConfig) -> Container {
         env_from: Some(vec![env_configmap, env_secret]),
         image: Some(config.image.to_owned()),
         image_pull_policy: Some("IfNotPresent".to_string()),
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         ports: Some(vec![container_port]),
         args: Some(vec!["start-dev".to_string()]),
         liveness_probe: Some(Probe {
@@ -82,10 +80,10 @@ pub async fn deployment(namespace: &str, config: KeycloakConfig) -> anyhow::Resu
     let client = Client::try_default().await?;
 
     let metadata = ObjectMeta {
-        name: Some(NAME.to_string()),
+        name: Some(config.name.to_string()),
         labels: Some(BTreeMap::from([(
             "app.kubernetes.io/name".to_string(),
-            NAME.to_string(),
+            config.name.to_string(),
         )])),
         ..Default::default()
     };
@@ -97,7 +95,7 @@ pub async fn deployment(namespace: &str, config: KeycloakConfig) -> anyhow::Resu
             target_port: Some(IntOrString::Int(config.port)),
             ..Default::default()
         },
-        name: NAME.to_string(),
+        name: config.name.to_string(),
         service_type: Some("NodePort".to_string()),
         ..Default::default()
     };
@@ -152,7 +150,7 @@ pub async fn deployment(namespace: &str, config: KeycloakConfig) -> anyhow::Resu
 
     let deployments: Api<Deployment> = Api::namespaced(client, namespace);
 
-    let container = container(config);
+    let container = container(config.clone());
 
     let keycloak = Deployment {
         metadata: metadata.clone(),
@@ -167,7 +165,7 @@ pub async fn deployment(namespace: &str, config: KeycloakConfig) -> anyhow::Resu
             selector: LabelSelector {
                 match_labels: Some(BTreeMap::from([(
                     "app.kubernetes.io/name".to_string(),
-                    NAME.to_string(),
+                    config.name.to_string(),
                 )])),
                 ..Default::default()
             },

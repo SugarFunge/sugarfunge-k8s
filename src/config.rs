@@ -2,6 +2,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ApiConfig {
+    pub name: String,
     pub image: String,
     pub port: i32,
     pub listen_url: String,
@@ -11,6 +12,7 @@ pub struct ApiConfig {
 impl Default for ApiConfig {
     fn default() -> Self {
         Self {
+            name: "sf-api".to_string(),
             image: "sugarfunge.azurecr.io/api:latest".to_string(),
             port: 4000,
             listen_url: "http://0.0.0.0:4000".to_string(),
@@ -21,6 +23,7 @@ impl Default for ApiConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ExplorerConfig {
+    pub name: String,
     pub image: String,
     pub port: i32,
     pub ws_url: String,
@@ -29,6 +32,7 @@ pub struct ExplorerConfig {
 impl Default for ExplorerConfig {
     fn default() -> Self {
         Self {
+            name: "sf-explorer".to_string(),
             image: "sugarfunge.azurecr.io/explorer:latest".to_string(),
             port: 80,
             ws_url: "wss://node.sugarfunge.dev".to_string(),
@@ -38,6 +42,7 @@ impl Default for ExplorerConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct IpfsConfig {
+    pub name: String,
     pub image: String,
     pub swarm_tcp_port: i32,
     pub swarm_udp_port: i32,
@@ -48,6 +53,7 @@ pub struct IpfsConfig {
 impl Default for IpfsConfig {
     fn default() -> Self {
         Self {
+            name: "sf-ipfs".to_string(),
             image: "ipfs/go-ipfs:v0.13.0".to_string(),
             swarm_tcp_port: 4001,
             swarm_udp_port: 4002,
@@ -82,6 +88,7 @@ impl Default for KeycloakDatabaseConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct KeycloakConfig {
+    pub name: String,
     pub image: String,
     pub port: i32,
     pub admin_username: String,
@@ -92,6 +99,7 @@ pub struct KeycloakConfig {
 impl Default for KeycloakConfig {
     fn default() -> Self {
         Self {
+            name: "sf-keycloak".to_string(),
             image: "quay.io/keycloak/keycloak:18.0.0".to_string(),
             port: 8080,
             admin_username: "keycloak".to_string(),
@@ -128,6 +136,7 @@ pub struct ChainSpecExternal {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
+    pub name: String,
     pub image: String,
     pub ws_port: i32,
     pub p2p_port: i32,
@@ -141,6 +150,7 @@ pub struct NodeConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         Self {
+            name: "sf-node".to_string(),
             image: "sugarfunge.azurecr.io/node:latest".to_string(),
             ws_port: 9944,
             p2p_port: 30334,
@@ -155,6 +165,7 @@ impl Default for NodeConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct StatusConfig {
+    pub name: String,
     pub image: String,
     pub port: i32,
     pub node_url: String,
@@ -163,6 +174,7 @@ pub struct StatusConfig {
 impl Default for StatusConfig {
     fn default() -> Self {
         Self {
+            name: "sf-status".to_string(),
             image: "sugarfunge.azurecr.io/status:latest".to_string(),
             port: 8000,
             node_url: "wss://node.sugarfunge.dev".to_string(),
@@ -172,6 +184,7 @@ impl Default for StatusConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct IngressConfig {
+    pub name: String,
     pub host: String,
     pub tls_secret: String,
     pub tls_issuer: String,
@@ -180,6 +193,7 @@ pub struct IngressConfig {
 impl Default for IngressConfig {
     fn default() -> Self {
         Self {
+            name: "sf-ingress".to_string(),
             host: "demo.sugarfunge.dev".to_string(),
             tls_secret: "sf-ingress-tls".to_string(),
             tls_issuer: "letsencrypt-staging".to_string(),

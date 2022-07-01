@@ -1,6 +1,7 @@
 Config (
     api: Some(
         ApiConfig (
+            name: "sf-api",
             image: "sugarfunge.azurecr.io/api:latest",
             port: 4000,
             listen_url: "http://0.0.0.0:4000",
@@ -9,6 +10,7 @@ Config (
     ),
     explorer: Some(
         ExplorerConfig (
+            name: "sf-explorer",
             image: "sugarfunge.azurecr.io/explorer:latest",
             port: 80,
             ws_url: "wss://node.sugarfunge.dev",
@@ -16,6 +18,7 @@ Config (
     ),
     ipfs: Some(
         IpfsConfig (
+            name: "sf-ipfs",
             image: "ipfs/go-ipfs:v0.13.0",
             swarm_tcp_port: 4001,
             swarm_udp_port: 4002,
@@ -25,6 +28,7 @@ Config (
     ),
     keycloak: Some(
         KeycloakConfig (
+            name: "sf-keycloak",
             image: "quay.io/keycloak/keycloak:15.0.2",
             port: 8080,
             admin_username: "keycloak",
@@ -41,6 +45,7 @@ Config (
     ),
     node: Some(
         NodeConfig (
+            name: "sf-node",
             image: "sugarfunge.azurecr.io/node:latest",
             ws_port: 9945,
             p2p_port: 30335,
@@ -60,6 +65,7 @@ Config (
     ),
     status: Some(
         StatusConfig (
+            name: "sf-status",
             image: "sugarfunge.azurecr.io/status:latest",
             port: 8000,
             node_url: "wss://node.sugarfunge.dev",
@@ -67,6 +73,7 @@ Config (
     ),
     ingress: Some(
         IngressConfig (
+            name: "sf-ingress",
             host: "demo.sugarfunge.dev",
             tls_secret: "sf-ingress-tls",
             tls_issuer: "letsencrypt-staging",
