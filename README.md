@@ -1,6 +1,6 @@
 # sugarfunge-k8s
 
-Manage your SugarFunge Infrastructure in Kubernetes.
+Manage your SugarFunge Infrastructure in **[Kubernetes](https://kubernetes.io)**.
 
 ## Usage
 
@@ -12,13 +12,9 @@ sugarfunge-k8s --help
 
 ## Build from Source
 
-### Software Requirements
-
-Click the name of each software to go to the setup webpage.
+### Software Requirement
 
 * **[Rust](https://rustup.rs)**: Stable
-* **[Docker](https://docs.docker.com/get-docker)**: 20.10.x
-* *[Minikube](https://minikube.sigs.k8s.io/docs/start)*: 1.25.x (Tested with Kubernetes v1.23.3) (Optional. You can use your own Kubernetes cluster that matches the version used in the `k8s-openapi` crate in the `Cargo.toml` file)
 
 ### Download and Compile
 
