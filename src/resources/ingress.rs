@@ -114,7 +114,7 @@ pub async fn create(
         };
 
         let service_name_parsed_as_host =
-            service_name.replace("sf-", "").to_owned() + "." + &ingress_config.host;
+            service_name + "." + &ingress_config.host;
 
         let rule = IngressRule {
             host: Some(service_name_parsed_as_host.to_string()),
