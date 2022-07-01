@@ -16,11 +16,26 @@ k8s-openapi = { version = "0.15.0", features = ["v1_23"] }`
 
 ## Usage
 
+* Check the available commands and arguments.
+
 ```bash
 sugarfunge-k8s --help
 ```
 
-* An optional configuration file can be provided with the `--config` argument following the file path like `sugarfunge-k8s create node --config config.ron`. It should be a [ron](https://github.com/ron-rs/ron) file. An example file is provided in the repository `config.ron` with the default configuration used when not file is provided.
+* Run the infrastructure with the default configuration.
+
+```bash
+kubectl create ns test
+sugarfunge-k8s create ipfs
+sugarfunge-k8s create ipfs -n test
+sugarfunge-k8s create node
+sugarfunge-k8s create node --config=config.ron -n test
+sugarfunge-k8s create explorer
+sugarfunge-k8s create status
+sugarfunge-k8s create api
+# Check the Keycloak section on how to run it with the default configution.
+sugarfunge-k8s create keycloak
+```
 
 ## Build from Source
 
