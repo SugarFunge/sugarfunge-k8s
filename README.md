@@ -2,6 +2,18 @@
 
 Manage your SugarFunge Infrastructure in **[Kubernetes](https://kubernetes.io)**.
 
+### Kubernetes version support
+
+| Kubernetes Version          | sugarfunge-k8s version                  |
+| --------------------------- | --------------------------------------- |
+| 1.23                        | 0.1.0 (Latest)                          |
+
+Check the `Cargo.toml` file if you're running from `main` after the first release gets published:
+```rust
+// feature 1_23 = Kubernetes 1.23
+k8s-openapi = { version = "0.15.0", features = ["v1_23"] }`
+```
+
 ## Usage
 
 ```bash
@@ -33,7 +45,7 @@ $ cargo run --release -- --help
 > This configuration is intended for local and/or testing purposes.
 
 ### Additional Dependency
-* **[Helm](https://helm.sh/docs/intro/install)**: 3.9.x
+* **[Helm](https://helm.sh/docs/intro/install)**: Stable
 
 ### Setup
 
