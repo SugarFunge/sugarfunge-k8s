@@ -71,6 +71,7 @@ fn container(chain_type: SugarfungeChainType, config: NodeConfig) -> Container {
         "--".to_string() + &config.node_name,
         "--port=".to_string() + &config.p2p_port.to_string(),
         "--ws-port=".to_string() + &config.ws_port.to_string(),
+        "--prometheus-port=".to_string() + &config.prometheus_port.to_string(),
         "--unsafe-ws-external".to_string(),
         "--unsafe-rpc-external".to_string(),
         "--rpc-methods=Unsafe".to_string(),

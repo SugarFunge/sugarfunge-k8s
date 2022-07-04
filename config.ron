@@ -29,7 +29,7 @@ Config (
     keycloak: Some(
         KeycloakConfig (
             name: "sf-keycloak",
-            image: "quay.io/keycloak/keycloak:15.0.2",
+            image: "quay.io/keycloak/keycloak:18.0.0",
             port: 8080,
             admin_username: "keycloak",
             admin_password: "keycloak",
